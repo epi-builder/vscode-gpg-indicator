@@ -207,12 +207,13 @@ export default class KeyStatusManager {
             this.logger.info(`Running in untrusted workspace, skip ${folder}, use ${this.defaultFolder} instead.`);
             folder = this.defaultFolder;
         }
+        // Always sync status as git config may be changed.
+        await this.syncStatus();
         if (this.activateFolder === folder) {
             return;
         }
         this.logger.info(`Change folder to ${folder}`);
         this.activateFolder = folder;
-        await this.syncStatus();
     }
 
     /** Recover activate folder after workspace trust granted */

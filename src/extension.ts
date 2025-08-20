@@ -137,6 +137,23 @@ export async function activate(context: vscode.ExtensionContext) {
 
     const commandId = 'gpgIndicator.unlockCurrentKey';
     context.subscriptions.push(vscode.commands.registerCommand(commandId, async () => {
+        // Force refresh of git config for the active folder to ensure latest signingKey
+        let folder: string | undefined;
+        const fileUri = vscode.window.activeTextEditor?.document.uri;
+        if (fileUri) {
+            const wsFolder = vscode.workspace.getWorkspaceFolder(fileUri);
+            if (wsFolder) {
+                folder = wsFolder.uri.fsPath;
+            }
+        }
+        if (!folder && vscode.workspace.workspaceFolders !== undefined && vscode.workspace.workspaceFolders.length > 0) {
+            folder = vscode.workspace.workspaceFolders[0].uri.fsPath;
+        }
+        if (folder) {
+            await keyStatusManager.updateFolders([folder]);
+            await keyStatusManager.changeActivateFolder(folder);
+        }
+
         const currentKey = keyStatusManager.getCurrentKey();
         if (!currentKey) {
             vscode.window.showErrorMessage(vscode.l10n.t(m["noKeyInCurrentFolder"]));
