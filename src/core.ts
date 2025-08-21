@@ -89,7 +89,17 @@ export default class KeyStatusManager {
             const isChanged = this.currentKey !== oldCurrentKey;
 
             let newEvent: KeyStatusEvent | undefined;
-            const hasPassphrase = (await this.secretStorage.get(this.currentKey.fingerprint) !== undefined);
+            let hasPassphrase = false;
+            try {
+                hasPassphrase = (await this.secretStorage.get(this.currentKey.fingerprint) !== undefined);
+            } catch (err) {
+                const errors = err instanceof Error ? err.message : JSON.stringify(err);
+                this.logger.warn(`Passphrase cache is invalid for key ${this.currentKey.fingerprint}, will clear it: ${errors}`);
+                try {
+                    await this.secretStorage.delete(this.currentKey.fingerprint);
+                } catch {}
+                hasPassphrase = false;
+            }
             try {
                 if (this.enablePassphraseCache && hasPassphrase) {
                     this.isUnlocked = await this.tryUnlockWithCache(isChanged, isUnlockedPrev, this.currentKey);
@@ -207,13 +217,15 @@ export default class KeyStatusManager {
             this.logger.info(`Running in untrusted workspace, skip ${folder}, use ${this.defaultFolder} instead.`);
             folder = this.defaultFolder;
         }
-        // Always sync status as git config may be changed.
-        await this.syncStatus();
-        if (this.activateFolder === folder) {
-            return;
+        // Refresh key info for the effective folder first so git config changes are reflected.
+        await this.updateFolder(folder);
+        const isSameFolder = this.activateFolder === folder;
+        if (!isSameFolder) {
+            this.logger.info(`Change folder to ${folder}`);
+            this.activateFolder = folder;
         }
-        this.logger.info(`Change folder to ${folder}`);
-        this.activateFolder = folder;
+        // Always sync for the effective folder, even if unchanged.
+        await this.syncStatus();
     }
 
     /** Recover activate folder after workspace trust granted */
