@@ -12,7 +12,7 @@
         "name": "Weida Hong",
         "url": "https://blog.bitisle.net"
     },
-    "version": "0.7.5-epidev.0",
+    "version": "0.7.5-epidev.1",
     "publisher": "epidev",
     "engines": {
         "vscode": "^1.75.0"
@@ -157,6 +157,5 @@
         "url": "https://github.com/wdhongtw/vscode-gpg-indicator"
     },
     "preview": false,
-    "dependencies": {
-    }
+    "dependencies": {}
 }
